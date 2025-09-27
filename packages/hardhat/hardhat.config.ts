@@ -18,7 +18,7 @@ const providerApiKey = process.env.ALCHEMY_API_KEY || "oKxs-03sij-U_N0iOlrSsZFr2
 // If not set, it uses the hardhat account 0 private key.
 // You can generate a random account with `yarn generate` or `yarn account:import` to import your existing PK
 const deployerPrivateKey =
-  process.env.__RUNTIME_DEPLOYER_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+  process.env.__RUNTIME_DEPLOYER_PRIVATE_KEY ?? "0x8ef39e2ed4638705c4a0c3218eb75e2e91e2b3bb23dc39daab627b3c7f12202d";
 // If not set, it uses our block explorers default API keys.
 const etherscanApiKey = process.env.ETHERSCAN_V2_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
 
@@ -49,9 +49,14 @@ const config: HardhatUserConfig = {
     // If the network you are looking for is not here you can add new network settings
     hardhat: {
       forking: {
-        url: `https://palpable-aged-fog.hedera-mainnet.quiknode.pro/f6ae926e3168e6b73738ffd495e97696b361cbee`,
+        url: `https://testnet.hashio.io/api`,
         enabled: true,
       },
+    },
+    hederaTestnet: {
+      url: "https://testnet.hashio.io/api",
+      accounts: [deployerPrivateKey],
+      chainId: 296, // Hedera testnet chain ID
     },
     localhost: {
       url: process.env.RPC_URL || "http://127.0.0.1:8545",

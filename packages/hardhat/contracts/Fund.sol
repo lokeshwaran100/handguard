@@ -12,14 +12,65 @@ interface IWHBAR {
     function withdraw(uint256) external;
 }
 
-interface IDummyRouter {
-    function swapExactTokensForTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external returns (uint[] memory amounts);
+// SaucerSwap V3 Router Interface
+interface ISwapRouter {
+    struct ExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint24 fee;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    struct ExactInputParams {
+        bytes path;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+    }
+
+    struct ExactOutputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint24 fee;
+        address recipient;
+        uint256 deadline;
+        uint256 amountOut;
+        uint256 amountInMaximum;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    struct ExactOutputParams {
+        bytes path;
+        address recipient;
+        uint256 deadline;
+        uint256 amountOut;
+        uint256 amountInMaximum;
+    }
+
+    function exactInputSingle(ExactInputSingleParams calldata params)
+        external
+        payable
+        returns (uint256 amountOut);
+
+    function exactInput(ExactInputParams calldata params)
+        external
+        payable
+        returns (uint256 amountOut);
+
+    function exactOutputSingle(ExactOutputSingleParams calldata params)
+        external
+        payable
+        returns (uint256 amountIn);
+
+    function exactOutput(ExactOutputParams calldata params)
+        external
+        payable
+        returns (uint256 amountIn);
 }
 
 /**
@@ -43,6 +94,9 @@ contract Fund is ERC20, Ownable {
     uint256 public constant FEE_BASIS_POINTS = 100; // 1%
     uint256 public constant BASIS_POINTS_DENOMINATOR = 10000;
     uint256 public constant SLIPPAGE_BUFFER_BASIS_POINTS = 200; // 2%
+    
+    // SaucerSwap V3 fee tier (0.3% = 3000)
+    uint24 public constant POOL_FEE = 3000;
     
     // Fee distribution percentages
     uint256 public constant CREATOR_FEE_PERCENT = 50; // 50% to creator
@@ -148,13 +202,20 @@ contract Fund is ERC20, Ownable {
                 uint256 amountToSell = (excessValueUsd * (10**decimals)) / price;
 
                 if (amountToSell > 0) {
-                    address[] memory path = new address[](2);
-                    path[0] = token;
-                    path[1] = whbar;
                     IERC20(token).approve(dex, amountToSell);
-                    IDummyRouter(dex).swapExactTokensForTokens(
-                        amountToSell, 1, path, address(this), block.timestamp
-                    );
+                    
+                    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+                        tokenIn: token,
+                        tokenOut: whbar,
+                        fee: POOL_FEE,
+                        recipient: address(this),
+                        deadline: block.timestamp + 1200,
+                        amountIn: amountToSell,
+                        amountOutMinimum: 1,
+                        sqrtPriceLimitX96: 0
+                    });
+                    
+                    ISwapRouter(dex).exactInputSingle(params);
                 }
             }
         }
@@ -176,13 +237,20 @@ contract Fund is ERC20, Ownable {
                 uint256 whbarToSpend = (deficitValueUsd * 1e18) / whbarPriceUsd;
 
                 if (whbarToSpend > 0 && whbarToSpend <= IERC20(whbar).balanceOf(address(this))) {
-                     address[] memory path = new address[](2);
-                    path[0] = whbar;
-                    path[1] = token;
                     IERC20(whbar).approve(dex, whbarToSpend);
-                    IDummyRouter(dex).swapExactTokensForTokens(
-                        whbarToSpend, 1, path, address(this), block.timestamp
-                    );
+                    
+                    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+                        tokenIn: whbar,
+                        tokenOut: token,
+                        fee: POOL_FEE,
+                        recipient: address(this),
+                        deadline: block.timestamp + 1200,
+                        amountIn: whbarToSpend,
+                        amountOutMinimum: 1,
+                        sqrtPriceLimitX96: 0
+                    });
+                    
+                    ISwapRouter(dex).exactInputSingle(params);
                 }
             }
         }
@@ -224,20 +292,21 @@ function buyUnderlyingTokens(uint256 whbarAmount) internal {
         address token = underlyingTokens[i];
         
         if (amountPerToken > 0) {
-            address[] memory path = new address[](2);
-            path[0] = whbar;
-            path[1] = token;
-
             IERC20(whbar).approve(dex, amountPerToken);
             
-            try IDummyRouter(dex).swapExactTokensForTokens(
-                amountPerToken,
-                1, // amountOutMin
-                path,
-                address(this),
-                block.timestamp + 1200
-            ) returns (uint[] memory amounts) {
-                // No need to track balances manually
+            try ISwapRouter(dex).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: whbar,
+                    tokenOut: token,
+                    fee: POOL_FEE,
+                    recipient: address(this),
+                    deadline: block.timestamp + 1200,
+                    amountIn: amountPerToken,
+                    amountOutMinimum: 1,
+                    sqrtPriceLimitX96: 0
+                })
+            ) returns (uint256 amountOut) {
+                // Swap successful, amountOut contains the tokens received
             } catch {
                 // If swap fails, just continue to the next token
                 continue;
@@ -260,20 +329,21 @@ function sellUnderlyingTokens(uint256 sellPercentage) internal returns (uint256 
             uint256 tokensToSell = (tokenBalance * sellPercentage) / 1e18;
             if (tokensToSell == 0) continue;
 
-            address[] memory path = new address[](2);
-            path[0] = token;
-            path[1] = whbar;
-
             IERC20(token).approve(dex, tokensToSell);
 
-            try IDummyRouter(dex).swapExactTokensForTokens(
-                tokensToSell,
-                1, // amountOutMin
-                path,
-                address(this),
-                block.timestamp + 1200
-            ) returns (uint[] memory amounts) {
-                totalWhbarReceived += amounts[1];
+            try ISwapRouter(dex).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: token,
+                    tokenOut: whbar,
+                    fee: POOL_FEE,
+                    recipient: address(this),
+                    deadline: block.timestamp + 1200,
+                    amountIn: tokensToSell,
+                    amountOutMinimum: 1,
+                    sqrtPriceLimitX96: 0
+                })
+            ) returns (uint256 amountOut) {
+                totalWhbarReceived += amountOut;
             } catch {
                 // If swap fails, continue
                 continue;

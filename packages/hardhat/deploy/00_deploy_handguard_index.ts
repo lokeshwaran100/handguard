@@ -45,7 +45,7 @@ const deployHandguardIndex: DeployFunction = async function (hre: HardhatRuntime
 
   // DEX Router addresses
   const SAUCER_SWAP_TESTNET_ROUTER = "0x2D99ABD9008Dc933ff5c0CD271B88309593aB921"; // Hedera Testnet Saucer Swap Router
-  const SAUCER_SWAP_MAINNET_ROUTER = "0x60aE616a2155Ee3d9A68541Ba4544862310933d4"; // Hedera Mainnet Saucer Swap Router
+  const SAUCER_SWAP_MAINNET_ROUTER = "0x00000000000000000000000000000000003c437a"; // Hedera Mainnet Saucer Swap Router
 
   // WHBAR addresses
   const WHBAR_TESTNET = "0xd00ae08403B9bbb9124bB305C09058E32C39A48c"; // Testnet WHBAR
