@@ -90,7 +90,7 @@ const deployedContracts = {
       deployedOnBlock: 25473577,
     },
     FundFactory: {
-      address: "0xcAbc457aFb9350AA179A1cD534eF5ff8D33f7038",
+      address: "0x7455B0729d745b20398FECC0Ed056D0C587Bd9C6",
       abi: [
         {
           inputs: [
@@ -582,7 +582,7 @@ const deployedContracts = {
         renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
         transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
       },
-      deployedOnBlock: 25474319,
+      deployedOnBlock: 25478337,
     },
     HGIToken: {
       address: "0xA2Ecc81c24Db2c41EC7c26695D27e444268502C5",
