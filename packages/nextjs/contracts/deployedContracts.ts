@@ -87,10 +87,10 @@ const deployedContracts = {
       inheritedFunctions: {
         getPrice: "contracts/IOracle.sol",
       },
-      deployedOnBlock: 85137954,
+      deployedOnBlock: 85139264,
     },
     FundFactory: {
-      address: "0x7969c5eD335650692Bc04293B07F5BF2e7A673C0",
+      address: "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
       abi: [
         {
           inputs: [
@@ -582,7 +582,7 @@ const deployedContracts = {
         renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
         transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
       },
-      deployedOnBlock: 85138016,
+      deployedOnBlock: 85139274,
     },
     HGIToken: {
       address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
@@ -1057,7 +1057,7 @@ const deployedContracts = {
         renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
         transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
       },
-      deployedOnBlock: 85137952,
+      deployedOnBlock: 85139262,
     },
   },
 } as const;
