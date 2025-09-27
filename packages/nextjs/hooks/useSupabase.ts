@@ -10,9 +10,9 @@ export const useFunds = () => {
   useEffect(() => {
     const fetchFunds = async () => {
       try {
-        const { data: fundsData, error: fundsError } = await supabase.from("funds_main").select(`
+        const { data: fundsData, error: fundsError } = await supabase.from("funds").select(`
             *,
-            fund_tokens:fund_tokens_main (*)
+            fund_tokens:fund_tokens (*)
           `);
 
         if (fundsError) throw fundsError;
@@ -46,11 +46,11 @@ export const useUserInvestments = (userAddress?: string) => {
     const fetchInvestments = async () => {
       try {
         const { data, error } = await supabase
-          .from("investments_main")
+          .from("investments")
           .select(
             `
         *,
-        fund:funds_main (*)
+        fund:funds (*)
       `,
           )
           .eq("user_address", userAddress);
@@ -86,11 +86,11 @@ export const useUserFunds = (userAddress?: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from("funds_main")
+        .from("funds")
         .select(
           `
             *,
-            fund_tokens:fund_tokens_main (*)
+            fund_tokens:fund_tokens (*)
           `,
         )
         .eq("creator_address", userAddress);
@@ -128,11 +128,11 @@ export const useFund = (fundAddress?: string) => {
     const fetchFund = async () => {
       try {
         const { data, error } = await supabase
-          .from("funds_main")
+          .from("funds")
           .select(
             `
             *,
-            fund_tokens:fund_tokens_main (*)
+            fund_tokens:fund_tokens (*)
           `,
           )
           .eq("fund_address", fundAddress)
@@ -169,11 +169,11 @@ export const useTransactions = (userAddress?: string) => {
     const fetchTransactions = async () => {
       try {
         const { data, error } = await supabase
-          .from("transactions_main")
+          .from("transactions")
           .select(
             `
             *,
-            fund:funds_main (*)
+            fund:funds (*)
           `,
           )
           .eq("user_address", userAddress)
@@ -207,14 +207,14 @@ export const createFundRecord = async (
   try {
     // First, ensure user exists
     const { error: userError } = await supabase
-      .from("users_main")
+      .from("users")
       .upsert({ wallet_address: creatorAddress }, { onConflict: "wallet_address" });
 
     if (userError) throw userError;
 
     // Create the fund record with actual contract address
     const { data: fundData, error: fundError } = await supabase
-      .from("funds_main")
+      .from("funds")
       .insert({
         fund_address: fundAddress,
         fund_id: fundId,
@@ -238,7 +238,7 @@ export const createFundRecord = async (
       weight_percentage: index === tokens.length - 1 ? 100 - equalWeight * (tokens.length - 1) : equalWeight, // Last token gets remainder
     }));
 
-    const { error: tokensError } = await supabase.from("fund_tokens_main").insert(fundTokens);
+    const { error: tokensError } = await supabase.from("fund_tokens").insert(fundTokens);
 
     if (tokensError) throw tokensError;
 
@@ -269,14 +269,14 @@ export const investInFund = async (userAddress: string, fundAddress: string, amo
   try {
     // Ensure user exists
     const { error: userError } = await supabase
-      .from("users_main")
+      .from("users")
       .upsert({ wallet_address: userAddress }, { onConflict: "wallet_address" });
 
     if (userError) throw userError;
 
     // Create or update investment
     const { data: existingInvestment } = await supabase
-      .from("investments_main")
+      .from("investments")
       .select("*")
       .eq("user_address", userAddress)
       .eq("fund_address", fundAddress)
@@ -285,7 +285,7 @@ export const investInFund = async (userAddress: string, fundAddress: string, amo
     if (existingInvestment) {
       // Update existing investment
       const { error } = await supabase
-        .from("investments_main")
+        .from("investments")
         .update({
           share_balance: (existingInvestment.share_balance || 0) + amount,
           last_updated: new Date().toISOString(),
@@ -295,7 +295,7 @@ export const investInFund = async (userAddress: string, fundAddress: string, amo
       if (error) throw error;
     } else {
       // Create new investment
-      const { error } = await supabase.from("investments_main").insert({
+      const { error } = await supabase.from("investments").insert({
         user_address: userAddress,
         fund_address: fundAddress,
         share_balance: amount,
@@ -305,7 +305,7 @@ export const investInFund = async (userAddress: string, fundAddress: string, amo
     }
 
     // Record transaction
-    const { error: txError } = await supabase.from("transactions_main").insert({
+    const { error: txError } = await supabase.from("transactions").insert({
       user_address: userAddress,
       fund_address: fundAddress,
       txn_type: "buy",
@@ -328,7 +328,7 @@ export const updateFundWeights = async (fundAddress: string, newWeights: { [toke
     // Update each token's weight in the fund_tokens table
     const updates = Object.entries(newWeights).map(([tokenAddress, weight]) =>
       supabase
-        .from("fund_tokens_main")
+        .from("fund_tokens")
         .update({ weight_percentage: weight })
         .eq("fund_address", fundAddress)
         .eq("token_address", tokenAddress),
