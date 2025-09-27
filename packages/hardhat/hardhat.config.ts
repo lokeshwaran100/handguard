@@ -49,9 +49,14 @@ const config: HardhatUserConfig = {
     // If the network you are looking for is not here you can add new network settings
     hardhat: {
       forking: {
-        url: `https://palpable-aged-fog.hedera-mainnet.quiknode.pro/f6ae926e3168e6b73738ffd495e97696b361cbee`,
+        url: `https://testnet.hashio.io/api`,
         enabled: true,
       },
+    },
+    hederaTestnet: {
+      url: "https://testnet.hashio.io/api",
+      accounts: [deployerPrivateKey],
+      chainId: 296, // Hedera testnet chain ID
     },
     localhost: {
       url: process.env.RPC_URL || "http://127.0.0.1:8545",

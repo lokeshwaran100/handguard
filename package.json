@@ -50,8 +50,12 @@
     "verify": "yarn hardhat:verify"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.1",
+    "ethers": "^6.15.0",
+    "hardhat": "^3.0.6",
     "husky": "~9.1.6",
-    "lint-staged": "~13.2.2"
+    "lint-staged": "~13.2.2",
+    "solc": "^0.8.30"
   },
   "packageManager": "yarn@3.2.3",
   "engines": {
