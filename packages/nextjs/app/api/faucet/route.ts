@@ -20,10 +20,10 @@ export async function POST(request: Request) {
     }
 
     const account = privateKeyToAccount(pk as `0x${string}`);
-    const rpcUrl = "https://api.hedera-test.network/ext/bc/C/rpc";
+    const rpcUrl = "https://testnet.hashio.io/api";
     const walletClient = createWalletClient({ account, chain: hederaTestnet, transport: http(rpcUrl) });
 
-    const hgi = deployedContracts[43113 as keyof typeof deployedContracts].HGIToken;
+    const hgi = deployedContracts[296 as keyof typeof deployedContracts].HGIToken;
     const hgiAddress = hgi.address as `0x${string}`;
     const hgiAbi = hgi.abi as any;
 
