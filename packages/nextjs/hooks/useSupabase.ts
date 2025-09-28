@@ -222,7 +222,7 @@ export const createFundRecord = async (
         name,
         ticker,
         description,
-        hgi_burned: 1000, // HGI creation fee (1000 HGI tokens)
+        agi_burned: 1000, // HGI creation fee (1000 HGI tokens)
         underlying_tokens: tokens.map(t => t.symbol),
       })
       .select()
