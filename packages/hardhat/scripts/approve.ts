@@ -5,9 +5,7 @@ async function main() {
   const tokenAddress = "0xa2ecc81c24db2c41ec7c26695d27e444268502c5";
 
   // ERC20 ABI fragment (only approve)
-  const erc20Abi = [
-    "function approve(address spender, uint256 amount) external returns (bool)",
-  ];
+  const erc20Abi = ["function approve(address spender, uint256 amount) external returns (bool)"];
 
   // Connect signer (from hardhat.config accounts)
   const [signer] = await ethers.getSigners();
@@ -27,7 +25,7 @@ async function main() {
   console.log("✅ Approve tx hash:", tx.hash);
 }
 
-main().catch((error) => {
+main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

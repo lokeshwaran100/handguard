@@ -6,78 +6,50 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IOracle.sol";
+import "./HederaTokenService.sol";
+import "./HederaResponseCodes.sol";
 
 interface IWHBAR {
     function deposit() external payable;
+    function deposit(address user, address spender) external payable;
     function withdraw(uint256) external;
 }
 
-// SaucerSwap V3 Router Interface
-interface ISwapRouter {
-    struct ExactInputSingleParams {
-        address tokenIn;
-        address tokenOut;
-        uint24 fee;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-        uint160 sqrtPriceLimitX96;
-    }
-
-    struct ExactInputParams {
-        bytes path;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-    }
-
-    struct ExactOutputSingleParams {
-        address tokenIn;
-        address tokenOut;
-        uint24 fee;
-        address recipient;
-        uint256 deadline;
-        uint256 amountOut;
-        uint256 amountInMaximum;
-        uint160 sqrtPriceLimitX96;
-    }
-
-    struct ExactOutputParams {
-        bytes path;
-        address recipient;
-        uint256 deadline;
-        uint256 amountOut;
-        uint256 amountInMaximum;
-    }
-
-    function exactInputSingle(ExactInputSingleParams calldata params)
-        external
-        payable
-        returns (uint256 amountOut);
-
-    function exactInput(ExactInputParams calldata params)
-        external
-        payable
-        returns (uint256 amountOut);
-
-    function exactOutputSingle(ExactOutputSingleParams calldata params)
-        external
-        payable
-        returns (uint256 amountIn);
-
-    function exactOutput(ExactOutputParams calldata params)
-        external
-        payable
-        returns (uint256 amountIn);
+// Uniswap V2 Router Interface
+interface IUniswapV2Router02 {
+    function swapExactTokensForTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external returns (uint[] memory amounts);
+    
+    function swapExactETHForTokens(
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external payable returns (uint[] memory amounts);
+    
+    function swapExactTokensForETH(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external returns (uint[] memory amounts);
+    
+    function getAmountsOut(uint amountIn, address[] calldata path)
+        external view returns (uint[] memory amounts);
 }
 
 /**
  * Fund Contract - Manages individual index funds
  * @author Handguard Index
  */
-contract Fund is ERC20, Ownable {
+contract Fund is ERC20, Ownable, HederaTokenService {
+    error WhbarDepositFailed();
     // Fund metadata
     string public fundName;
     string public fundTicker;
@@ -95,8 +67,7 @@ contract Fund is ERC20, Ownable {
     uint256 public constant BASIS_POINTS_DENOMINATOR = 10000;
     uint256 public constant SLIPPAGE_BUFFER_BASIS_POINTS = 200; // 2%
     
-    // SaucerSwap V3 fee tier (0.3% = 3000)
-    uint24 public constant POOL_FEE = 3000;
+    // Uniswap V2 doesn't use fee tiers like V3
     
     // Fee distribution percentages
     uint256 public constant CREATOR_FEE_PERCENT = 50; // 50% to creator
@@ -204,18 +175,17 @@ contract Fund is ERC20, Ownable {
                 if (amountToSell > 0) {
                     IERC20(token).approve(dex, amountToSell);
                     
-                    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-                        tokenIn: token,
-                        tokenOut: whbar,
-                        fee: POOL_FEE,
-                        recipient: address(this),
-                        deadline: block.timestamp + 1200,
-                        amountIn: amountToSell,
-                        amountOutMinimum: 1,
-                        sqrtPriceLimitX96: 0
-                    });
+                    address[] memory path = new address[](2);
+                    path[0] = token;
+                    path[1] = whbar;
                     
-                    ISwapRouter(dex).exactInputSingle(params);
+                    IUniswapV2Router02(dex).swapExactTokensForTokens(
+                        amountToSell,
+                        1, // amountOutMin
+                        path,
+                        address(this),
+                        block.timestamp + 1200
+                    );
                 }
             }
         }
@@ -239,18 +209,17 @@ contract Fund is ERC20, Ownable {
                 if (whbarToSpend > 0 && whbarToSpend <= IERC20(whbar).balanceOf(address(this))) {
                     IERC20(whbar).approve(dex, whbarToSpend);
                     
-                    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-                        tokenIn: whbar,
-                        tokenOut: token,
-                        fee: POOL_FEE,
-                        recipient: address(this),
-                        deadline: block.timestamp + 1200,
-                        amountIn: whbarToSpend,
-                        amountOutMinimum: 1,
-                        sqrtPriceLimitX96: 0
-                    });
+                    address[] memory path = new address[](2);
+                    path[0] = whbar;
+                    path[1] = token;
                     
-                    ISwapRouter(dex).exactInputSingle(params);
+                    IUniswapV2Router02(dex).swapExactTokensForTokens(
+                        whbarToSpend,
+                        1, // amountOutMin
+                        path,
+                        address(this),
+                        block.timestamp + 1200
+                    );
                 }
             }
         }
@@ -276,7 +245,30 @@ contract Fund is ERC20, Ownable {
         distributeFees(fee);
         
         // Buy underlying tokens with remaining HBAR
+        // int256 response = HederaTokenService.associateToken(address(this), whbar);
+        // require(
+        //     response == HederaResponseCodes.SUCCESS ||
+        //         response == HederaResponseCodes.OK ||
+        //         response == HederaResponseCodes.TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT,
+        //     "WHBAR association failed"
+        // );
+
         IWHBAR(whbar).deposit{value: remainingAmount}();
+
+        // if (remainingAmount > 0) {
+        //     // Try the auto-approve variant first (required on some Hedera deployments)
+        //     (bool success, ) = whbar.call{value: remainingAmount}(
+        //         abi.encodeWithSignature("deposit(address,address)", address(this), address(this))
+        //     );
+
+        //     if (!success) {
+        //         // Fall back to standard deposit() when auto-approve is unavailable
+        //         (success, ) = whbar.call{value: remainingAmount}(abi.encodeWithSignature("deposit()"));
+        //         if (!success) {
+        //             revert WhbarDepositFailed();
+        //         }
+        //     }
+        // }
         buyUnderlyingTokens(IERC20(whbar).balanceOf(address(this)));
         
         emit FundTokenBought(msg.sender, msg.value, fundTokensToMint, fee);
@@ -292,21 +284,23 @@ function buyUnderlyingTokens(uint256 whbarAmount) internal {
         address token = underlyingTokens[i];
         
         if (amountPerToken > 0) {
+            int256 response = HederaTokenService.associateToken(address(this), token);
+            //uint256 responseCode = IERC20(whbar).associate();
+
             IERC20(whbar).approve(dex, amountPerToken);
             
-            try ISwapRouter(dex).exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: whbar,
-                    tokenOut: token,
-                    fee: POOL_FEE,
-                    recipient: address(this),
-                    deadline: block.timestamp + 1200,
-                    amountIn: amountPerToken,
-                    amountOutMinimum: 1,
-                    sqrtPriceLimitX96: 0
-                })
-            ) returns (uint256 amountOut) {
-                // Swap successful, amountOut contains the tokens received
+            address[] memory path = new address[](2);
+            path[0] = whbar;
+            path[1] = token;
+            
+            try IUniswapV2Router02(dex).swapExactTokensForTokens(
+                amountPerToken,
+                1, // amountOutMin
+                path,
+                address(this),
+                block.timestamp + 1200
+            ) returns (uint[] memory amounts) {
+                // Swap successful, amounts[1] contains the tokens received
             } catch {
                 // If swap fails, just continue to the next token
                 continue;
@@ -331,19 +325,18 @@ function sellUnderlyingTokens(uint256 sellPercentage) internal returns (uint256 
 
             IERC20(token).approve(dex, tokensToSell);
 
-            try ISwapRouter(dex).exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: token,
-                    tokenOut: whbar,
-                    fee: POOL_FEE,
-                    recipient: address(this),
-                    deadline: block.timestamp + 1200,
-                    amountIn: tokensToSell,
-                    amountOutMinimum: 1,
-                    sqrtPriceLimitX96: 0
-                })
-            ) returns (uint256 amountOut) {
-                totalWhbarReceived += amountOut;
+            address[] memory path = new address[](2);
+            path[0] = token;
+            path[1] = whbar;
+
+            try IUniswapV2Router02(dex).swapExactTokensForTokens(
+                tokensToSell,
+                1, // amountOutMin
+                path,
+                address(this),
+                block.timestamp + 1200
+            ) returns (uint[] memory amounts) {
+                totalWhbarReceived += amounts[1]; // amounts[1] is the WHBAR received
             } catch {
                 // If swap fails, continue
                 continue;

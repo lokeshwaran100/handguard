@@ -19,6 +19,9 @@
     "lint": "eslint",
     "lint-staged": "eslint",
     "test": "REPORT_GAS=true hardhat test --network hardhat",
+    "test:testnet": "hardhat test test/TestnetIntegration.test.ts",
+    "test:specific": "hardhat test test/SpecificTokensTest.test.ts",
+    "test:all-testnet": "ts-node scripts/runTestnetTests.ts",
     "verify": "hardhat etherscan-verify"
   },
   "dependencies": {

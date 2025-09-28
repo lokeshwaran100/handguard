@@ -44,7 +44,7 @@ const deployHederaTestnet: DeployFunction = async function (hre: HardhatRuntimeE
       oracle.address,
       deployer, // treasury
       "0x0000000000000000000000000000000000159398", // dex
-      "0x0000000000000000000000000000000000003ad1", // whbar
+      "0x0000000000000000000000000000000000003ad2", // whbar
       deployer, // admin
     ],
     log: true,
@@ -54,25 +54,36 @@ const deployHederaTestnet: DeployFunction = async function (hre: HardhatRuntimeE
   // Configure oracle with mock price feeds (using zero addresses for now)
   console.log("Configuring oracle with mock price feeds...");
   const oracleContract = await ethers.getContractAt("ChainlinkOracle", oracle.address);
-  
+
   // Set mock prices (these would normally be Chainlink feeds)
   await oracleContract.setPriceFeed(ethers.ZeroAddress, ethers.ZeroAddress); // HBAR/USD
-//   await oracleContract.setPriceFeed(0x0000000000000000000000000000000000003ad1, ethers.ZeroAddress); // WHBAR/USD
-//   await oracleContract.setPriceFeed(mockBTC.address, ethers.ZeroAddress); // BTC/USD
-//   await oracleContract.setPriceFeed(mockETH.address, ethers.ZeroAddress); // ETH/USD
-//   await oracleContract.setPriceFeed(mockUSDC.address, ethers.ZeroAddress); // USDC/USD
-//   await oracleContract.setPriceFeed(mockUSDT.address, ethers.ZeroAddress); // USDT/USD
+  await oracleContract.setPriceFeed(
+    "0x0000000000000000000000000000000000003ad2",
+    "0x0000000000000000000000000000000000003ad2",
+  ); // WHBAR/USD
+  await oracleContract.setPriceFeed(
+    "0x0000000000000000000000000000000000120f46",
+    "0x0000000000000000000000000000000000120f46",
+  ); // WHBAR/USD
+  await oracleContract.setPriceFeed(
+    "0x0000000000000000000000000000000000001549",
+    "0x0000000000000000000000000000000000001549",
+  ); // WHBAR/USD
+  //   await oracleContract.setPriceFeed(mockBTC.address, ethers.ZeroAddress); // BTC/USD
+  //   await oracleContract.setPriceFeed(mockETH.address, ethers.ZeroAddress); // ETH/USD
+  //   await oracleContract.setPriceFeed(mockUSDC.address, ethers.ZeroAddress); // USDC/USD
+  //   await oracleContract.setPriceFeed(mockUSDT.address, ethers.ZeroAddress); // USDT/USD
 
   console.log("\n=== Hedera Testnet Deployment Complete ===");
   console.log("HGI Token:", hgiToken.address);
   console.log("Oracle:", oracle.address);
   console.log("FundFactory:", fundFactory.address);
-//   console.log("Mock WHBAR:", mockWHBAR.address);
-//   console.log("Mock BTC:", mockBTC.address);
-//   console.log("Mock ETH:", mockETH.address);
-//   console.log("Mock USDC:", mockUSDC.address);
-//   console.log("Mock USDT:", mockUSDT.address);
-//   console.log("Mock Router:", mockRouter.address);
+  //   console.log("Mock WHBAR:", mockWHBAR.address);
+  //   console.log("Mock BTC:", mockBTC.address);
+  //   console.log("Mock ETH:", mockETH.address);
+  //   console.log("Mock USDC:", mockUSDC.address);
+  //   console.log("Mock USDT:", mockUSDT.address);
+  //   console.log("Mock Router:", mockRouter.address);
   console.log("==========================================");
 };
 

@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   296: {
     ChainlinkOracle: {
-      address: "0x1D8d915b5f051139668107eDE4dfe48C8dd3f9fB",
+      address: "0x817a63Ac14c017a64F4473aC62240c2e15CA90a1",
       abi: [
         {
           inputs: [],
@@ -87,10 +87,10 @@ const deployedContracts = {
       inheritedFunctions: {
         getPrice: "contracts/IOracle.sol",
       },
-      deployedOnBlock: 25473577,
+      deployedOnBlock: 25498826,
     },
     FundFactory: {
-      address: "0x7455B0729d745b20398FECC0Ed056D0C587Bd9C6",
+      address: "0x98798D2e74E32C4e4687C66fd97C4973D5AaC6eC",
       abi: [
         {
           inputs: [
@@ -582,7 +582,7 @@ const deployedContracts = {
         renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
         transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
       },
-      deployedOnBlock: 25478337,
+      deployedOnBlock: 25499328,
     },
     HGIToken: {
       address: "0xA2Ecc81c24Db2c41EC7c26695D27e444268502C5",

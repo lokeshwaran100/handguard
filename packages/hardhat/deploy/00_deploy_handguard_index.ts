@@ -50,7 +50,6 @@ const deployHandguardIndex: DeployFunction = async function (hre: HardhatRuntime
   // WHBAR addresses
   const WHBAR_TESTNET = "0xd00ae08403B9bbb9124bB305C09058E32C39A48c"; // Testnet WHBAR
   const WHBAR_MAINNET = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"; // Mainnet WHBAR
-  
 
   // Token addresses for mainnet
   const BTC_B_MAINNET = "0x152b9d0FdC40C096757F570A51E494bd4b943E50"; // BTC.b
