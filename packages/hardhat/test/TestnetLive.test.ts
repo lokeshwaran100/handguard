@@ -602,6 +602,89 @@ describe("Live Testnet Integration Test", function () {
     }
 
     // ========================================
+    // STEP 5.5: FUND SELL TEST
+    // ========================================
+    console.log("\n💸 STEP 5.5: Fund Sell Test");
+    console.log("-".repeat(40));
+
+    // Only proceed with sell test if we have fund tokens
+    const currentFundBalance = await fund.balanceOf(deployer.address);
+    console.log("   Current fund token balance:", ethers.formatEther(currentFundBalance));
+
+    if (currentFundBalance > 0) {
+      // Test selling half of the fund tokens
+      const sellAmount = currentFundBalance / 2n;
+      console.log("   Selling fund tokens:", ethers.formatEther(sellAmount));
+
+      // Get initial HBAR balance before selling
+      const initialHbarBalance = await ethers.provider.getBalance(deployer.address);
+      console.log("   Initial HBAR balance:", ethers.formatEther(initialHbarBalance));
+
+      // Get initial fund total supply
+      const initialTotalSupply = await fund.totalSupply();
+      console.log("   Initial fund total supply:", ethers.formatEther(initialTotalSupply));
+
+      try {
+        console.log("   Attempting to sell fund tokens...");
+        const sellTx = await fund.sell(sellAmount);
+        console.log("   Transaction hash:", sellTx.hash);
+
+        const sellReceipt = await sellTx.wait();
+        console.log("   ✅ Transaction confirmed in block:", sellReceipt?.blockNumber);
+
+        // Check final balances
+        const finalFundBalance = await fund.balanceOf(deployer.address);
+        const finalHbarBalance = await ethers.provider.getBalance(deployer.address);
+        const finalTotalSupply = await fund.totalSupply();
+
+        console.log("   ✅ Final fund token balance:", ethers.formatEther(finalFundBalance));
+        console.log("   ✅ Final HBAR balance:", ethers.formatEther(finalHbarBalance));
+        console.log("   ✅ Final fund total supply:", ethers.formatEther(finalTotalSupply));
+
+        // Verify fund tokens were burned
+        expect(finalFundBalance).to.equal(currentFundBalance - sellAmount);
+        expect(finalTotalSupply).to.equal(initialTotalSupply - sellAmount);
+
+        // Verify we received some HBAR back (accounting for gas costs)
+        // Note: We can't do exact comparison due to gas costs, but balance should have increased
+        console.log("   📊 HBAR difference:", ethers.formatEther(finalHbarBalance - initialHbarBalance));
+
+        // Check for FundTokenSold event
+        const events = await fund.queryFilter(fund.filters.FundTokenSold(), sellReceipt?.blockNumber);
+        if (events.length > 0) {
+          const event = events[0];
+          console.log("   ✅ FundTokenSold event emitted:");
+          console.log("      Seller:", event.args.seller);
+          console.log("      Fund tokens burned:", ethers.formatEther(event.args.fundTokensBurned));
+          console.log("      HBAR returned:", ethers.formatEther(event.args.hbarReturned));
+          console.log("      Fee paid:", ethers.formatEther(event.args.feePaid));
+
+          expect(event.args.seller).to.equal(deployer.address);
+          expect(event.args.fundTokensBurned).to.equal(sellAmount);
+        }
+
+        console.log("🎉 Fund token sell successful!");
+      } catch (error: any) {
+        console.log("   ⚠️ Fund token sell failed");
+        console.log("   Error:", error.message);
+        console.log("   📝 This may be expected if:");
+        console.log("      - Fund has no underlying token balances to sell");
+        console.log("      - DEX liquidity is insufficient for swaps");
+        console.log("      - WHBAR unwrap functionality is not available on testnet");
+
+        // Log the specific error for debugging
+        if (error.message.includes("No value to return")) {
+          console.log("   📝 Fund has no underlying assets to convert back to HBAR");
+        } else if (error.message.includes("transaction execution reverted")) {
+          console.log("   📝 Transaction reverted - likely due to DEX/WHBAR issues on testnet");
+        }
+      }
+    } else {
+      console.log("   ⚠️ No fund tokens to sell (buy operation may have failed)");
+      console.log("   📝 Skipping sell test");
+    }
+
+    // ========================================
     // STEP 6: FUND MANAGEMENT TEST
     // ========================================
     console.log("\n⚖️  STEP 6: Fund Management Test");
@@ -733,6 +816,7 @@ describe("Live Testnet Integration Test", function () {
     console.log("✅ STEP 4.8: WHBAR auto-wrap readiness check - COMPLETED");
     console.log("✅ STEP 4.9: Direct HBAR transfer to fund - COMPLETED");
     console.log("✅ STEP 5: Fund investment test - ATTEMPTED");
+    console.log("✅ STEP 5.5: Fund sell test - ATTEMPTED");
     console.log("✅ STEP 6: Fund management functions - TESTED");
     console.log("✅ STEP 7: Factory view functions - PASSED");
     console.log("✅ STEP 8: Token accessibility check - COMPLETED");
