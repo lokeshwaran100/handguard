@@ -43,7 +43,7 @@ const deployHederaTestnet: DeployFunction = async function (hre: HardhatRuntimeE
       hgiToken.address,
       oracle.address,
       deployer, // treasury
-      "0x0000000000000000000000000000000000159398", // dex
+      "0x0000000000000000000000000000000000004b40", // dex
       "0x0000000000000000000000000000000000003ad2", // whbar
       deployer, // admin
     ],

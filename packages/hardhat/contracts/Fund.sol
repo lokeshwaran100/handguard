@@ -244,57 +244,29 @@ contract Fund is ERC20, Ownable, HederaTokenService {
         // Distribute fees
         distributeFees(fee);
         
-        // Buy underlying tokens with remaining HBAR
-        // int256 response = HederaTokenService.associateToken(address(this), whbar);
-        // require(
-        //     response == HederaResponseCodes.SUCCESS ||
-        //         response == HederaResponseCodes.OK ||
-        //         response == HederaResponseCodes.TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT,
-        //     "WHBAR association failed"
-        // );
-
-        IWHBAR(whbar).deposit{value: remainingAmount}();
-
-        // if (remainingAmount > 0) {
-        //     // Try the auto-approve variant first (required on some Hedera deployments)
-        //     (bool success, ) = whbar.call{value: remainingAmount}(
-        //         abi.encodeWithSignature("deposit(address,address)", address(this), address(this))
-        //     );
-
-        //     if (!success) {
-        //         // Fall back to standard deposit() when auto-approve is unavailable
-        //         (success, ) = whbar.call{value: remainingAmount}(abi.encodeWithSignature("deposit()"));
-        //         if (!success) {
-        //             revert WhbarDepositFailed();
-        //         }
-        //     }
-        // }
-        buyUnderlyingTokens(IERC20(whbar).balanceOf(address(this)));
+        // Buy underlying tokens with remaining HBAR using native HBAR
+        buyUnderlyingTokensWithETH(remainingAmount);
         
         emit FundTokenBought(msg.sender, msg.value, fundTokensToMint, fee);
     }
 
-function buyUnderlyingTokens(uint256 whbarAmount) internal {
-    require(whbarAmount > 0, "Amount must be greater than 0");
+function buyUnderlyingTokensWithETH(uint256 hbarAmount) internal {
+    require(hbarAmount > 0, "Amount must be greater than 0");
     require(dex != address(0), "DEX not set");
 
-    uint256 amountPerToken = whbarAmount / underlyingTokens.length;
+    uint256 amountPerToken = hbarAmount / underlyingTokens.length;
 
     for (uint256 i = 0; i < underlyingTokens.length; i++) {
         address token = underlyingTokens[i];
         
         if (amountPerToken > 0) {
             int256 response = HederaTokenService.associateToken(address(this), token);
-            //uint256 responseCode = IERC20(whbar).associate();
-
-            IERC20(whbar).approve(dex, amountPerToken);
             
             address[] memory path = new address[](2);
-            path[0] = whbar;
+            path[0] = whbar; // WHBAR is still used as the path reference
             path[1] = token;
             
-            try IUniswapV2Router02(dex).swapExactTokensForTokens(
-                amountPerToken,
+            try IUniswapV2Router02(dex).swapExactETHForTokens{value: amountPerToken}(
                 1, // amountOutMin
                 path,
                 address(this),
