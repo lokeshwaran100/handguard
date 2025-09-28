@@ -5,7 +5,7 @@ import type { NextPage } from "next";
 import { useAccount } from "wagmi";
 import { CheckCircleIcon, DocumentDuplicateIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useCopyToClipboard } from "~~/hooks/scaffold-eth/useCopyToClipboard";
-import { useHGIToken, useFundFactory } from "~~/hooks/useContracts";
+import { useFundFactory, useHGIToken } from "~~/hooks/useContracts";
 import { createFund, createFundRecord } from "~~/hooks/useSupabase";
 
 const CreateFund: NextPage = () => {
@@ -297,10 +297,10 @@ const CreateFund: NextPage = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select token</option>
-                      <option value="0x152b9d0FdC40C096757F570A51E494bd4b943E50">BTC.b (Bitcoin)</option>
-                      <option value="0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB">WETH.e (Wrapped Ethereum)</option>
+                      <option value="0x152b9d0FdC40C096757F570A51E494bd4b943E50">BTC (Bitcoin)</option>
+                      <option value="0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB">WETH (Wrapped Ethereum)</option>
                       <option value="0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E">USDC (USD Coin)</option>
-                      <option value="0xc7198437980c041c805A1EDcbA50c1Ce5db95118">USDT.e (Tether USD)</option>
+                      <option value="0xc7198437980c041c805A1EDcbA50c1Ce5db95118">USDT (Tether USD)</option>
                     </select>
                   </div>
 
